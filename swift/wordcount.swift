@@ -1,15 +1,11 @@
-type messagefile;
-type countfile;
+type file;
 
-app (countfile t) countwords (messagefile f) {
-    wc "-w" @filename(f) stdout=@filename(t);
+app (file o) countwords (file i) {
+    wordcount filename(i) stdout=filename(o);
 }
 
-messagefile inputfile <"alice.txt">;
+file inputfile <"../input/small-dataset">;
 
-countfile c <regexp_mapper;
-            source=@inputfile,
-            match="(.*)txt",
-            transform="\\1count">;
+file outputfile <"wordcount.out">;
 
-c = countwords(inputfile);
+outputfile = countwords(inputfile);
