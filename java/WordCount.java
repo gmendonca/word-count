@@ -4,37 +4,71 @@ import java.io.*;
 
 public class WordCount
 {
-	public static void main(String[ ] args){
-		
-		//Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
-		//Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
 
-		// if(args.length != 2){
-		// 	System.out.println("Provide the input and output files when runing the program: java WordCount input output");
-		// 	return;
-		// }
+    public static ArrayList<ArrayList<String>> splitFile(File f, int numThreads) throws FileNotFoundException{
+
+    	int it = 1;
+    	ArrayList<String> lines = new ArrayList<String>();
+
+    	Scanner in = new Scanner(f);
+
+    	while (in.hasNext()){
+    		lines.add(in.nextLine());
+    	}
+
+    	ArrayList<ArrayList<String>> files = new ArrayList<ArrayList<String>>();
+
+    	int linePerFile = lines.size()/numThreads;
+
+    	for(int i = 0; i < numThreads; i++){
+    		files.add(new ArrayList<String>());
+    	}
+
+    	for(int i = 0; i < lines.size(); i++){
+    		files.get(it).add(lines.get(i));
+    		if(it <= numThreads && i == (i*linePerFile)) it++;
+    	}
+
+    	return files;
+
+    }
+
+	public static void main(String[ ] args){
 
 		String inputFileName = args[0];
 
 		int numThreads = Integer.parseInt(args[1]);
 
-		for(int i = 0; i < numThreads; i++){
-			Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
-			new CountWord(inputFileName, wordCounts, i).start();
+		try
+		{
+
+			File f = new File(inputFileName);
+
+			ArrayList<ArrayList<String>> files;
+
+			files = splitFile(f, numThreads);
+
+			for(int i = 0; i < numThreads; i++){
+				Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
+				new CountWord(files.get(i), wordCounts, i).start();
+			}
+
+		}catch(FileNotFoundException e)
+		{
+			System.out.println(inputFileName + " not found!");
+			e.printStackTrace();
+			return;
 		}
-		
-		// CountWord c = new CountWord(inputFileName, wordCounts, 0);
-		// c.start();
 	}
 }
 
 class CountWord extends Thread
 {
-	private String inputFileName;
+	private ArrayList<String> inputFileName;
 	private Map<String, Integer> wordCounts;
 	private int id;
 
-	public CountWord(String inputFileName, Map<String, Integer> wordCounts, int id){
+	public CountWord(ArrayList<String> inputFileName, Map<String, Integer> wordCounts, int id){
 		this.inputFileName = inputFileName;
 		this.wordCounts = wordCounts;
 		this.id = id;
@@ -77,6 +111,7 @@ class CountWord extends Thread
 			System.out.println("Done");
  
 		} catch (IOException e) {
+			System.out.println("coco");
 			e.printStackTrace();
 			return;
 		}
@@ -86,17 +121,11 @@ class CountWord extends Thread
 	public void run(){
 		int count;
       	String word;
-
-      	Pattern pattern = Pattern.compile("[\\s]+");
-      	// Pattern pattern = Pattern.compile("[^\\w|;.']+");
-
-		try
-		{
-			Scanner in = new Scanner(new File(inputFileName));
-
-			while (in.hasNext()){
-				in.useDelimiter(pattern);
-				word = in.next().replaceFirst("[^a-zA-Z0-9]*", "");
+      	
+		for(String s : inputFileName){
+			String[] words = s.split("\\s+");
+			for(String w : words){
+				word = w.replaceFirst("[^a-zA-Z0-9]*", "");
 				word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
 				word = new StringBuilder(word).reverse().toString();
 				if(word.length() == 0) continue;
@@ -104,12 +133,6 @@ class CountWord extends Thread
 				else count = 1;
 				wordCounts.put(word, count);
 			}
-		}
-		catch (FileNotFoundException e)
-		{
-			System.out.println(inputFileName + " not found!");
-			e.printStackTrace();
-			return;
 		}
 
 		WriteToFile();

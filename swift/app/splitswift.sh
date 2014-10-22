@@ -24,4 +24,10 @@ do
 	fi
 done
 
-sed ''range[$(($2-1))]','range[$2]'!d' $1
+#echo $((range[$(($2-1))]))
+#echo $((range[$2]))
+if(($2==0)); then
+sed '1,'$((range[$2]))'!d' $1
+else
+sed ''$((range[$(($2-1))]))','$((range[$2]-1))'!d' $1
+fi
