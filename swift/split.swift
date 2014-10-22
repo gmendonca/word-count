@@ -1,22 +1,14 @@
 type file;
 
-app (file o) countwords (file i) {
-    wordcount filename(i) stdout=filename(o);
+app (file o) split(file f,int i){
+	splitswift filename(f) i stdout=filename(o);
 }
 
-app (file o) merge (file fs[]) {
-    mergefiles filenames(fs) stdout=filename(o);
-}
-
-file inputfiles[] <filesys_mapper;prefix="wordcount-input-">;
+file inputfile <"../input/small-dataset">;
 file outputfiles[];
 
-foreach f,i in inputfiles {
-	file outputfile <single_file_mapper; file=strcat("output/wordcount-output-",i,".out")>;
-	outputfile = countwords(f);
+foreach i in [0:9] {
+	file outputfile <single_file_mapper; file=strcat("input/wordcount-input-0",i)>;
+	outputfile = split(inputfile,i);
 	outputfiles[i] = outputfile;
-
 }
-
-file mergedfile <single_file_mapper; file=strcat("output/wordcount-merge.out")>;
-mergedfile = merge(outputfiles);
