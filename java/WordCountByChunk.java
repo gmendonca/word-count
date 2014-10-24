@@ -5,7 +5,7 @@ import java.util.regex.*;
 import java.io.*;
 
 public class WordCountByChunk {
-    private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
+  private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
 
     List<Map.Entry<String, Integer>> list = 
       new LinkedList<Map.Entry<String, Integer>>(unsortMap.entrySet());
@@ -24,7 +24,7 @@ public class WordCountByChunk {
     }
     return sortedMap;
   }
-
+  
   public static void WriteToFile(Map<String, Integer> wordCounts){
     try {
  
@@ -97,7 +97,7 @@ public class WordCountByChunk {
         for ( FileProcessor t: threads ) {
           try{
             t.join();
-            wordCounts.putAll( t.getWordCountMap() );
+            wordCounts = t.getWordCountMap();
           } catch (Exception ex){}
         }
       }

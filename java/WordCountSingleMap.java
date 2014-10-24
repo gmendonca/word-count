@@ -78,8 +78,7 @@ public class WordCountSingleMap {
       //long[] offsets = new long[threads];
       File file = new File(inputFileName);
 
-      //long numFiles = splitFile(file);
-      long numFiles = 1;
+      long numFiles = splitFile(file);
 
       ArrayList<FileProcessor> threads = new ArrayList<FileProcessor>();
 
@@ -98,13 +97,12 @@ public class WordCountSingleMap {
         for ( FileProcessor t: threads ) {
           try{
             t.join();
-            //wordCounts.putAll( t.getWordCountMap() );
             //wordCounts = t.getWordCountMap();
           } catch (Exception ex){}
         }
       }
 
-      //WriteToFile(wordCounts);
+      WriteToFile(wordCounts);
       System.out.println("allright");
   }
 }
@@ -129,29 +127,32 @@ class FileProcessor extends Thread
     int count;
     System.out.println("Thread " + id + " running!");
 
+    String word;
+
+    Pattern pattern = Pattern.compile("[\\s]+");
+
     String path = "input/chuck-10Gb-"+numFile;
 
-    try{
-    FileInputStream inputStream = null;
-    Scanner sc = null;
-    try {
-      inputStream = new FileInputStream(path);
-      sc = new Scanner(inputStream);
-      while (sc.hasNextLine()) {
-        System.out.println(sc.next());
-      }
-              // note that Scanner suppresses exceptions
-      if (sc.ioException() != null) {
-        throw sc.ioException();
-      }
-    } finally {
-      if (inputStream != null) {
-        inputStream.close();
-      }
-      if (sc != null) {
-        sc.close();
+    try
+    {
+      Scanner in = new Scanner(new File(path));
+
+      while (in.hasNext()){
+        in.useDelimiter(pattern);
+        word = in.next().replaceFirst("[^a-zA-Z0-9]*", "");
+        word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
+        word = new StringBuilder(word).reverse().toString();
+        if(word.length() == 0) continue;
+        if(wordCounts.containsKey(word)) count = wordCounts.get(word) + 1;
+        else count = 1;
+        wordCounts.put(word, count);
       }
     }
-  }catch(Exception e){}
+    catch (FileNotFoundException e)
+    {
+      System.out.println(path + " not found!");
+      e.printStackTrace();
+      return;
+    }
 }
 }
