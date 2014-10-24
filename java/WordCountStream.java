@@ -3,7 +3,7 @@ import java.util.regex.*;
 import java.io.*;
 import java.util.concurrent.*;
 
-public class WordCount
+public class WordCountStream
 {
 	private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
 
@@ -48,16 +48,32 @@ public class WordCount
 
 	}
 
-	public static ArrayList<ArrayList<String>> splitFile(File f, int numThreads) throws FileNotFoundException{
+	public static ArrayList<ArrayList<String>> splitFile(File f, int numThreads) throws Exception{
 
     	int it = 0;
     	ArrayList<String> lines = new ArrayList<String>();
 
-    	Scanner in = new Scanner(f);
-
-    	while (in.hasNext()){
-    		lines.add(in.nextLine());
-    	}
+    	FileInputStream inputStream = null;
+		Scanner sc = null;
+		try {
+			inputStream = new FileInputStream(f);
+			sc = new Scanner(inputStream);
+			while (sc.hasNextLine()) {
+				lines.add(sc.nextLine());
+        	// System.out.println(line);
+			}
+    		// note that Scanner suppresses exceptions
+			if (sc.ioException() != null) {
+				throw sc.ioException();
+			}
+		} finally {
+			if (inputStream != null) {
+				inputStream.close();
+			}
+			if (sc != null) {
+				sc.close();
+			}
+		}
 
     	ArrayList<ArrayList<String>> files = new ArrayList<ArrayList<String>>();
 
@@ -90,24 +106,24 @@ public class WordCount
 
 			files = splitFile(f, numThreads);
 
-			ArrayList<CountWord> maps = new ArrayList<CountWord>();
+			// ArrayList<CountWord> maps = new ArrayList<CountWord>();
 
-			Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
+			// Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
 
-			for(int i = 0; i < numThreads; i++){
-				CountWord cw = new CountWord(files.get(i), wordCounts, i);
-				maps.add(cw);
-				cw.start();
-			}
+			// for(int i = 0; i < numThreads; i++){
+			// 	CountWord cw = new CountWord(files.get(i), wordCounts, i);
+			// 	maps.add(cw);
+			// 	cw.start();
+			// }
 
-			for ( CountWord t: maps ) {
-				try{
-					t.join();
-					wordCounts.putAll( t.getWordCountMap() );
-				} catch (Exception ex){}
-			}
+			// for ( CountWord t: maps ) {
+			// 	try{
+			// 		t.join();
+			// 		wordCounts.putAll( t.getWordCountMap() );
+			// 	} catch (Exception ex){}
+			// }
 
-		WriteToFile(wordCounts);
+		//WriteToFile(wordCounts);
 		}catch(Exception e){
 			System.out.println("b.o.");
 			return;

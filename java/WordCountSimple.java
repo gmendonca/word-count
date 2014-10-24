@@ -1,9 +1,8 @@
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
-import java.util.concurrent.*;
 
-public class WordCount
+public class WordCountSimple
 {
 	private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
 
@@ -25,10 +24,10 @@ public class WordCount
 		return sortedMap;
 	}
 
-	public static void WriteToFile(Map<String, Integer> wordCounts){
+	private static void WriteToFile(Map<String, Integer> wordCounts){
 		try {
  
-			File file = new File("output/wordcount-java.txt");
+			File file = new File("output/wordcount-java-simple.txt");
  
 			if (!file.exists()) file.createNewFile();
  
@@ -48,80 +47,41 @@ public class WordCount
 
 	}
 
-	public static ArrayList<ArrayList<String>> splitFile(File f, int numThreads) throws FileNotFoundException{
-
-    	int it = 0;
-    	ArrayList<String> lines = new ArrayList<String>();
-
-    	Scanner in = new Scanner(f);
-
-    	while (in.hasNext()){
-    		lines.add(in.nextLine());
-    	}
-
-    	ArrayList<ArrayList<String>> files = new ArrayList<ArrayList<String>>();
-
-    	int linePerFile = lines.size()/numThreads;
-
-    	for(int i = 0; i < numThreads; i++){
-    		files.add(new ArrayList<String>());
-    	}
-
-    	for(int i = 0; i < lines.size(); i++){
-    		files.get(it).add(lines.get(i));
-    		if(it <= numThreads && i != 0 &&i == (i*linePerFile)){
-    			it++;
-    		}
-    	}
-
-    	return files;
-    }
-
 	public static void main(String[ ] args){
+		
+		//String inputFileName = args[0];
 
-		try{
-		String inputFileName = args[0];
+		int numThreads = args.length;
 
-		int numThreads = Integer.parseInt(args[1]);
+		ArrayList<CountWord> threads = new ArrayList<CountWord>();
 
-			File f = new File(inputFileName);
+		Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
 
-			ArrayList<ArrayList<String>> files;
+		for(int i = 0; i < numThreads; i++){
+			CountWord cw = new CountWord(args[i], wordCounts, i);
+			threads.add(cw);
+			cw.start();
+		}
 
-			files = splitFile(f, numThreads);
-
-			ArrayList<CountWord> maps = new ArrayList<CountWord>();
-
-			Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
-
-			for(int i = 0; i < numThreads; i++){
-				CountWord cw = new CountWord(files.get(i), wordCounts, i);
-				maps.add(cw);
-				cw.start();
-			}
-
-			for ( CountWord t: maps ) {
-				try{
-					t.join();
-					wordCounts.putAll( t.getWordCountMap() );
-				} catch (Exception ex){}
-			}
+		for ( CountWord t: threads ) {
+			try{
+				t.join();
+				wordCounts.putAll( t.getWordCountMap() );
+			} catch (Exception ex){}
+		}
 
 		WriteToFile(wordCounts);
-		}catch(Exception e){
-			System.out.println("b.o.");
-			return;
-		}
+		System.out.println("allright");
 	}
 }
 
 class CountWord extends Thread
 {
-	private ArrayList<String> inputFileName;
+	private String inputFileName;
 	private Map<String, Integer> wordCounts;
 	private int id;
 
-	public CountWord(ArrayList<String> inputFileName, Map<String, Integer> wordCounts, int id){
+	public CountWord(String inputFileName, Map<String, Integer> wordCounts, int id){
 		this.inputFileName = inputFileName;
 		this.wordCounts = wordCounts;
 		this.id = id;
@@ -135,10 +95,15 @@ class CountWord extends Thread
 		int count;
       	String word;
 
-		for(String s : inputFileName){
-			String[] words = s.split("\\s+");
-			for(String w : words){
-				word = w.replaceFirst("[^a-zA-Z0-9]*", "");
+      	Pattern pattern = Pattern.compile("[\\s]+");
+
+		try
+		{
+			Scanner in = new Scanner(new File(inputFileName));
+
+			while (in.hasNext()){
+				in.useDelimiter(pattern);
+				word = in.next().replaceFirst("[^a-zA-Z0-9]*", "");
 				word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
 				word = new StringBuilder(word).reverse().toString();
 				if(word.length() == 0) continue;
@@ -146,6 +111,12 @@ class CountWord extends Thread
 				else count = 1;
 				wordCounts.put(word, count);
 			}
+		}
+		catch (FileNotFoundException e)
+		{
+			System.out.println(inputFileName + " not found!");
+			e.printStackTrace();
+			return;
 		}
 	}
 }
