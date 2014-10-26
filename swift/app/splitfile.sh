@@ -10,4 +10,4 @@ fi
 
 #echo $divLines
 
-split -d -l$((divLines)) $1 $2
+split -d -l$((divLines+1)) $1 $2

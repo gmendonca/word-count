@@ -1,11 +1,10 @@
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.*;
-import java.util.regex.*;
 import java.io.*;
+import java.util.*; 
 
-public class WordCountByChunk {
-  private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
+/* I am not doing strong error checking. Sorry... */
+
+public class WordCountNew {
+    private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap) {
 
     List<Map.Entry<String, Integer>> list = 
       new LinkedList<Map.Entry<String, Integer>>(unsortMap.entrySet());
@@ -80,21 +79,20 @@ public class WordCountByChunk {
 
       long numFiles = splitFile(file);
 
-      ArrayList<FileProcessor> threads = new ArrayList<FileProcessor>();
+      ArrayList<ThreadCount> threads = new ArrayList<ThreadCount>();
 
-      Map<String, Integer> wordCounts = new TreeMap<String, Integer>();
       int n=0;
       while(numFiles > 0){
         System.out.println("File " + numFiles + "...");
         for(int i = 0; i < numThreads; i++){
-          FileProcessor cw = new FileProcessor(wordCounts, i, n);
+          ThreadCount cw = new ThreadCount(i, n);
           threads.add(cw);
           cw.start();
           n++;
           numFiles--;
         }
 
-        for ( FileProcessor t: threads ) {
+        for ( ThreadCount t: threads ) {
           try{
             t.join();
             //wordCounts = t.getWordCountMap();
@@ -102,64 +100,54 @@ public class WordCountByChunk {
         }
       }
 
-      WriteToFile(wordCounts);
+      //WriteToFile(wordCounts);
       System.out.println("allright");
   }
 }
 
-class FileProcessor extends Thread
+class ThreadCount extends Thread
 {
-  private Map<String, Integer> wordCounts;
-  private int id;
-  private long numFile; 
+    private int id;
+    private long numFile;
+    private Map<String, Integer> _wordCount;
 
-  public FileProcessor(Map<String, Integer> wordCounts, int id, long numFile){
-    this.wordCounts = wordCounts;
-    this.id = id;
-    this.numFile = numFile;
-  }
-
-    public Map<String, Integer> getWordCountMap(){
-      return wordCounts;
+    public ThreadCount(int id, long numFile)
+    {
+        this.id = id;
+        this.numFile = numFile;
+        this._wordCount = new HashMap<String, Integer>();
+    }
+    
+    public Map<String, Integer> getWordCount()
+    {
+        return this._wordCount;
     }
 
-  public void run(){
-    int count;
-    System.out.println("Thread " + id + " running!");
+    @Override
+    public void run()
+    {
+         try{
+            BufferedReader br = new BufferedReader(new FileReader("input/chuck-10Gb-"+numFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                for (String word: line.split("\\s+")){
+                    // trim prefixing nonalphameric
+                    word = word.replaceFirst("[^a-zA-Z0-9\\s]*", "");
+                    word = new StringBuffer(word).reverse().toString();
+                    word = word.replaceFirst("[^a-zA-Z0-9\\s]*", "");
+                    word = new StringBuffer(word).reverse().toString();
+                    //System.out.println(word);
 
-    String path = "input/chuck-10Gb-"+numFile;
+                    Integer count = _wordCount.get(word);
+                    _wordCount.put(word, count == null ? 1 : count + 1);
+                }
+            }
+            br.close();
 
-    try{
-    FileInputStream inputStream = null;
-    Scanner sc = null;
-    try {
-      inputStream = new FileInputStream(path);
-      sc = new Scanner(inputStream);
-      while (sc.hasNextLine()) {
-        String line = sc.nextLine();
-        String[] words = line.split("\\s+");
-        for(String w : words){
-          //String word = w.replaceFirst("[^a-zA-Z0-9]*", "");
-          //word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
-          //word = new StringBuilder(word).reverse().toString();
-          if(w.length() == 0) continue;
-          if(wordCounts.containsKey(w)) count = wordCounts.get(w) + 1;
-          else count = 1;
-          wordCounts.put(w, count);
-        }
-      }
-              // note that Scanner suppresses exceptions
-      if (sc.ioException() != null) {
-        throw sc.ioException();
-      }
-    } finally {
-      if (inputStream != null) {
-        inputStream.close();
-      }
-      if (sc != null) {
-        sc.close();
-      }
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+
     }
-  }catch(Exception e){}
 }
-}
+

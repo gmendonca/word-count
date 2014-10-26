@@ -127,11 +127,12 @@ class FileProcessor extends Thread
         if (line == null) {
           continue;
         }
-        String[] words = line.split("\\s+");
-        for(String w : words){
-          String word = w.replaceFirst("[^a-zA-Z0-9]*", "");
-          word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
-          word = new StringBuilder(word).reverse().toString();
+        //String[] words = line.split("\\s+");
+        String[] words = line.split("[^a-zA-Z0-9]*\\s+[^a-zA-Z0-9]*");
+        for(String word : words){
+          //String word = w.replaceFirst("[^a-zA-Z0-9]*", "");
+          //word = new StringBuilder(word).reverse().toString().replaceFirst("[^a-zA-Z0-9]*", "");
+          //word = new StringBuilder(word).reverse().toString();
           if(word.length() == 0) continue;
           if(wordCounts.containsKey(word)) count = wordCounts.get(word) + 1;
           else count = 1;
