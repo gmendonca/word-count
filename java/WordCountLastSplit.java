@@ -55,14 +55,14 @@ public class WordCountLastSplit implements Runnable {
         byte[] buffer = new byte[sizeOfFiles];
         int tmp = 0;
         while ((tmp = fi.read(buffer)) > 0) {
-            File newFile=new File("input/chuck-10Gb-"+partCounter);
+            File newFile=new File("input/chunk-"+partCounter);
             newFile.createNewFile();
             out = new FileOutputStream(newFile);
             out.write(buffer,0,tmp);
             out.flush();
             out.close();
             partCounter++;
-            System.out.println("input/chuck-10Gb-"+partCounter);
+            System.out.println("input/chunk-"+partCounter);
         }
 
         return partCounter;
@@ -126,8 +126,13 @@ public class WordCountLastSplit implements Runnable {
         int chunksize = 1024;
         if (args.length >= 2) numThreads = Integer.valueOf(args[1]);
 
-        //long numFiles = splitFile(new File(args[0]));
+        int yes = 0;
+        
+        if (args.length >= 3) yes = Integer.valueOf(args[1]);
+
         long numFiles = 155;
+        if(yes == 1) numFiles = splitFile(new File(args[0]));
+        else numFiles = 155;
 
         //long startTime = System.currentTimeMillis();
 
@@ -136,7 +141,7 @@ public class WordCountLastSplit implements Runnable {
         for(long i = 0; i < numFiles; i++){
             System.out.println("File " + i);
             ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-            BufferedReader reader = new BufferedReader(new FileReader("input/chuck-10Gb-"+i));
+            BufferedReader reader = new BufferedReader(new FileReader("input/chunk-"+i));
             String leftover = ""; // in case a string broken in half
             while (true) {
                 String res = readFileAsString(reader,chunksize);
